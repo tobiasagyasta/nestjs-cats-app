@@ -33,12 +33,7 @@ export class CatsController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.catsService.findOne(id);
   }
-  @Get(':id/age')
-  getAge(@Param('id', ParseIntPipe) id: number) {
-    const cat = this.catsService.findOne(id);
-    const age = this.catsService.calculateAge(cat.birthdate);
-    return `Cat with id ${id} and name ${cat.name} is ${age} years old.`;
-  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -55,5 +50,12 @@ export class CatsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     this.catsService.remove(id);
     return { message: `Cat with id ${id} has been removed.` };
+  }
+
+  @Get(':id/age')
+  getAge(@Param('id', ParseIntPipe) id: number) {
+    const cat = this.catsService.findOne(id);
+    const age = this.catsService.calculateAge(cat.birthdate);
+    return `Cat with id ${id} and name ${cat.name} is ${age} years old.`;
   }
 }
