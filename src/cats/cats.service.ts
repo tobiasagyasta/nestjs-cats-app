@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { Cat } from './entities/cat.entity';
 
 @Injectable()
@@ -11,6 +15,12 @@ export class CatsService {
 
   create(cat: Omit<Cat, 'id'>): Cat {
     const newCat: Cat = { id: this.nextId++, ...cat };
+    const existingCat = this.cats.some((c) => c.name === newCat.name);
+    if (existingCat) {
+      throw new ConflictException(
+        `Cat with name ${newCat.name} already exists`,
+      );
+    }
     this.cats.push(newCat);
     return newCat;
   }
