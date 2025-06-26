@@ -45,6 +45,6 @@ export class ProductsController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     this.productService.remove(id);
-    return { message: `Cat with id ${id} has been removed.` };
+    return { message: `Product with id ${id} has been removed.` };
   }
 }
