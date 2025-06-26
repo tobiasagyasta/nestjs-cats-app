@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { CatsService } from './cats.service';
 import { CreateCatDto } from './DTOs/create-cat.dto';
+import { UpdateCatDto } from './DTOs/update-cat.dto';
 
 @Controller('cats')
 export class CatsController {
@@ -41,7 +42,7 @@ export class CatsController {
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateCatDto: Partial<CreateCatDto>,
+    @Body() updateCatDto: UpdateCatDto,
   ) {
     return this.catsService.update(id, {
       ...updateCatDto,
