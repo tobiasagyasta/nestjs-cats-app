@@ -1,55 +1,35 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Product } from './entities/product.entity';
+import { ProductsRepository } from './products.repository';
+import { IProductsService } from './interfaces/products.service.interface';
 
 @Injectable()
-export class ProductsService {
-  private products: Product[] = [
-    new Product(
-      1,
-      'Kitty Crackers',
-      15000,
-      'Sebuah crackers gurih untuk kucing',
-    ),
-  ];
-  private nextId = 2;
+export class ProductsService implements IProductsService {
+  constructor(private readonly productsRepository: ProductsRepository) {}
 
-  create(product: Omit<Product, 'id'>): Product {
-    const newProduct: Product = { id: this.nextId++, ...product };
-    const existingProduct = this.products.some(
-      (p) => p.name === newProduct.name,
-    );
-    if (existingProduct) {
-      throw new ConflictException(
-        `Product with name ${newProduct.name} already exists`,
-      );
+  create(product: Omit<Product, 'id'>): Product | null {
+    if (this.productsRepository.existsByName(product.name)) {
+      return null;
     }
-    this.products.push(newProduct);
-    return newProduct;
+    return this.productsRepository.create(product);
   }
+
   findAll(): Product[] {
-    return this.products;
+    return this.productsRepository.findAll();
   }
-  findOne(id: number): Product {
-    const product = this.products.find((product) => product.id === id);
-    if (!product) {
-      throw new NotFoundException(`product with id ${id} not found`);
-    }
-    return product;
+
+  findOne(id: number): Product | null {
+    return this.productsRepository.findOne(id) ?? null;
   }
-  update(id: number, update: Partial<Omit<Product, 'id'>>): Product {
-    const product = this.findOne(id);
-    Object.assign(product, update);
-    return product;
+
+  update(id: number, update: Partial<Omit<Product, 'id'>>): Product | null {
+    return this.productsRepository.update(id, update) ?? null;
   }
-  remove(id: number): void {
-    const removedproduct = this.products.find((product) => product.id === id);
-    if (!removedproduct) {
-      throw new NotFoundException(`product with id ${id} not found`);
-    }
-    this.products.splice(this.products.indexOf(removedproduct), 1);
+
+  remove(id: number): boolean {
+    return this.productsRepository.remove(id);
+  }
+  existsByName(name: string): boolean {
+    return this.productsRepository.existsByName(name);
   }
 }
