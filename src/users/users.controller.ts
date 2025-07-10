@@ -8,7 +8,6 @@ import {
   Delete,
   UseInterceptors,
   NotFoundException,
-  BadRequestException,
   InternalServerErrorException,
   ConflictException,
   ParseIntPipe,
@@ -26,14 +25,14 @@ export class UsersController {
 
   @UseInterceptors(new SerializationInterceptor(CreatedUserResponseDto))
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  async create(@Body() createUserDto: CreateUserDto) {
     try {
-      // Check for duplicate email
-      const existing = this.usersService.findByEmail(createUserDto.email);
+      const existing = await this.usersService.findByEmail(createUserDto.email);
       if (existing) {
         throw new ConflictException('User with this email already exists');
       }
-      const user = this.usersService.create(createUserDto);
+
+      const user = await this.usersService.create(createUserDto);
       return user;
     } catch (err) {
       if (err instanceof ConflictException) throw err;
@@ -42,25 +41,27 @@ export class UsersController {
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     try {
-      // Check for duplicate email if email is being updated
       if (updateUserDto.email) {
-        const existing = this.usersService.findByEmail(updateUserDto.email);
+        const existing = await this.usersService.findByEmail(
+          updateUserDto.email,
+        );
         if (existing && existing.id !== String(id)) {
           throw new ConflictException('User with this email already exists');
         }
       }
-      const updated = this.usersService.update(id, updateUserDto);
+
+      const updated = await this.usersService.update(id, updateUserDto);
       if (!updated) {
         throw new NotFoundException(`User with id ${id} not found`);
       }
       return updated;
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof ConflictException)
+      if (err instanceof ConflictException || err instanceof NotFoundException)
         throw err;
       throw new InternalServerErrorException('Failed to update user');
     }
@@ -68,9 +69,9 @@ export class UsersController {
 
   @UseInterceptors(new SerializationInterceptor(UserDetailResponseDto))
   @Get()
-  findAll() {
+  async findAll() {
     try {
-      return this.usersService.findAll();
+      return await this.usersService.findAll();
     } catch {
       throw new InternalServerErrorException('Failed to fetch users');
     }
@@ -78,9 +79,9 @@ export class UsersController {
 
   @UseInterceptors(new SerializationInterceptor(UserDetailResponseDto))
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id', ParseIntPipe) id: number) {
     try {
-      const user = this.usersService.findOne(id);
+      const user = await this.usersService.findOne(id);
       if (!user) {
         throw new NotFoundException(`User with id ${id} not found`);
       }
@@ -92,9 +93,9 @@ export class UsersController {
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(@Param('id', ParseIntPipe) id: number) {
     try {
-      const removed = this.usersService.remove(id);
+      const removed = await this.usersService.remove(id);
       if (!removed) {
         throw new NotFoundException(`User with id ${id} not found`);
       }

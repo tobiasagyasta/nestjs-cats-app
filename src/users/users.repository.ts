@@ -1,62 +1,78 @@
 import { Injectable } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { IUsersRepository } from './interfaces/users.repository.interface';
+import { DatabaseService } from 'src/database/database.service';
 import { UserRole } from './common/user-role.enum';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
-  private users: User[] = [
-    {
-      id: '1',
-      email: 'admin@example.com',
-      password: 'hashedpassword',
-      fullName: 'Admin User',
-      roles: [UserRole.ADMIN],
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
-  private nextId = 2;
+  constructor(private readonly db: DatabaseService) {}
 
-  create(user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): User {
-    const newUser: User = {
-      ...user,
-      id: String(this.nextId++),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.users.push(newUser);
-    return newUser;
+  async create(
+    user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<User> {
+    const now = new Date();
+    const res = await this.db.getClient().query(
+      `INSERT INTO users (email, password, full_name, roles, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING *`,
+      [
+        user.email,
+        user.password,
+        user.fullName,
+        user.roles,
+        user.isActive,
+        now,
+      ],
+    );
+    return res.rows[0];
   }
 
-  findAll(): User[] {
-    return this.users;
+  async findAll(): Promise<User[]> {
+    const res = await this.db.getClient().query('SELECT * FROM users');
+    return res.rows;
   }
 
-  findOne(id: number): User | undefined {
-    return this.users.find((user) => Number(user.id) === id);
+  async findOne(id: number): Promise<User | undefined> {
+    const res = await this.db
+      .getClient()
+      .query('SELECT * FROM users WHERE id = $1', [id]);
+    return res.rows[0];
   }
 
-  update(id: number, update: Partial<Omit<User, 'id'>>): User | undefined {
-    const user = this.findOne(id);
-    if (user) {
-      Object.assign(user, update, { updatedAt: new Date() });
-      return user;
+  async update(
+    id: number,
+    update: Partial<Omit<User, 'id'>>,
+  ): Promise<User | undefined> {
+    const now = new Date();
+    const fields: string[] = [];
+    const values: any[] = [];
+    let index = 1;
+
+    for (const [key, value] of Object.entries(update)) {
+      fields.push(`${key} = $${index++}`);
+      values.push(value);
     }
-    return undefined;
+    values.push(now);
+    fields.push(`updated_at = $${index}`);
+    values.push(id);
+
+    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${index + 1} RETURNING *`;
+
+    const res = await this.db.getClient().query(query, values);
+    return res.rows[0];
   }
 
-  remove(id: number): boolean {
-    const idx = this.users.findIndex((user) => Number(user.id) === id);
-    if (idx !== -1) {
-      this.users.splice(idx, 1);
-      return true;
-    }
-    return false;
+  async remove(id: number): Promise<boolean> {
+    const res = await this.db
+      .getClient()
+      .query('DELETE FROM users WHERE id = $1', [id]);
+    return res.rowCount > 0;
   }
 
-  findByEmail(email: string): User | undefined {
-    return this.users.find((user) => user.email === email);
+  async findByEmail(email: string): Promise<User | undefined> {
+    const res = await this.db
+      .getClient()
+      .query('SELECT * FROM users WHERE email = $1', [email]);
+    return res.rows[0];
   }
 }

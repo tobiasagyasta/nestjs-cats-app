@@ -8,29 +8,32 @@ import { User } from './entities/user.entity';
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  create(createUserDto: CreateUserDto): User {
-    return this.usersRepository.create({
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    return await this.usersRepository.create({
       ...createUserDto,
     });
   }
 
-  findAll(): User[] {
-    return this.usersRepository.findAll();
+  async findAll(): Promise<User[]> {
+    return await this.usersRepository.findAll();
   }
 
-  findOne(id: number): User | undefined {
-    return this.usersRepository.findOne(id);
+  async findOne(id: number): Promise<User | undefined> {
+    return await this.usersRepository.findOne(id);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto): User | undefined {
-    return this.usersRepository.update(id, updateUserDto);
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<User | undefined> {
+    return await this.usersRepository.update(id, updateUserDto);
   }
 
-  remove(id: number): boolean {
-    return this.usersRepository.remove(id);
+  async remove(id: number): Promise<boolean> {
+    return await this.usersRepository.remove(id);
   }
 
-  findByEmail(email: string): User | undefined {
-    return this.usersRepository.findByEmail(email);
+  async findByEmail(email: string): Promise<User | undefined> {
+    return await this.usersRepository.findByEmail(email);
   }
 }
